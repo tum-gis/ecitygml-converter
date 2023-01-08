@@ -1,0 +1,27 @@
+[package]
+name = "ecitygml-converter-core"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Core of the ecitygml-converter library"
+
+
+[dependencies]
+egml = { workspace = true }
+ecitygml = { workspace = true }
+egraphics = { workspace = true }
+erosbag = { workspace = true }
+
+serde = { workspace = true, features = [ "derive" ] }
+quick-xml = { workspace = true, features = [ "serialize" ] }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+itertools = { workspace = true }
+nalgebra = { workspace = true }
+parry3d-f64 = { workspace = true, features = ["f64"] }
+meshopt = { workspace = true }
+gltf = { workspace = true, features = ["names"] }
+gltf-json = { workspace = true, features = ["names"] }
+chrono = { workspace = true }

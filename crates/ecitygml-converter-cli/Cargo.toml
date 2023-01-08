@@ -1,0 +1,24 @@
+[package]
+name = "ecitygml-converter-cli"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "CLI tool for citygml converter"
+
+
+[dependencies]
+ecitygml-converter = { version = "0.0.1-alpha.1", path = "../ecitygml-converter", registry = "custom" }
+
+ecitygml = { workspace = true }
+egraphics = { workspace = true }
+erosbag = { workspace = true }
+
+clap = { workspace = true, features = ["derive"] }
+serde = { workspace = true, features = [ "derive" ] }
+quick-xml = { workspace = true, features = [ "serialize" ] }
+itertools = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+nalgebra = { workspace = true }
