@@ -5,19 +5,23 @@ authors.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "Core of the ecitygml-converter library"
+description = "Core primitives and operations for converting CityGML data to other representations."
 
 
 [dependencies]
+ecoord = { workspace = true }
 egml = { workspace = true }
 ecitygml = { workspace = true }
 egraphics = { workspace = true }
-erosbag = { workspace = true }
+erosbag = { workspace = true, optional = true }
+evoxel = { workspace = true, optional = true }
 
+thiserror = { workspace = true }
 serde = { workspace = true, features = [ "derive" ] }
 quick-xml = { workspace = true, features = [ "serialize" ] }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
+polars = { workspace = true, features = ["lazy", "ndarray"] }
 itertools = { workspace = true }
 nalgebra = { workspace = true }
 parry3d-f64 = { workspace = true, features = ["f64"] }
@@ -25,3 +29,10 @@ meshopt = { workspace = true }
 gltf = { workspace = true, features = ["names"] }
 gltf-json = { workspace = true, features = ["names"] }
 chrono = { workspace = true }
+rayon = { workspace = true }
+
+
+[features]
+default = ["rosbag", "voxel"]
+rosbag = ["dep:erosbag"]
+voxel = ["dep:evoxel"]

@@ -2,7 +2,7 @@ use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None, propagate_version = true)]
-pub struct Args {
+pub struct Arguments {
     #[clap(subcommand)]
     pub command: Commands,
 }
@@ -30,6 +30,7 @@ pub enum Commands {
         offset: Option<Vec<f64>>,
     },
 
+    #[cfg(feature = "rosbag")]
     /// Convert from CityGML to a ROS2 bag for visualization purposes
     ConvertToRosbag {
         /// Path to the CityGML dataset
@@ -49,5 +50,17 @@ pub enum Commands {
         /// offset which is subtracted from the geocoordinates
         #[clap(long, number_of_values = 3, allow_hyphen_values = true)]
         offset: Option<Vec<f64>>,
+    },
+
+    #[cfg(feature = "voxel")]
+    /// Convert from CityGML to a voxel representation
+    ConvertToVoxel {
+        /// Path to the CityGML dataset
+        #[clap(short, long)]
+        input_path: String,
+
+        /// Path to the output directory
+        #[clap(short, long)]
+        output_path: String,
     },
 }

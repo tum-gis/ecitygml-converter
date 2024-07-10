@@ -14,27 +14,32 @@ use erosbag::ros_messages::visualization_msgs::{
 use erosbag::topics::qos_profile::QualityOfServiceProfile;
 use erosbag::topics::topic::{TopicMetadata, TopicSerializationFormat};
 use nalgebra::{Isometry3, Point3, Quaternion, Translation3, UnitQuaternion, Vector3};
+
 use std::path::PathBuf;
 
 pub fn citymodel_to_rosbag(city_model: CitygmlModel, mut rosbag: Rosbag) {
     info!("Number of objects: {}", city_model.number_of_objects());
 
     let topic_name: String = "/marker_array".to_string();
-    rosbag.create_topic(
-        &topic_name,
-        &TopicMetadata::new(
-            RosMessageType::VisualizationMessagesMarkerArray,
-            TopicSerializationFormat::CDR,
-            vec![QualityOfServiceProfile::new_for_static_tf_topic()],
-        ),
-    );
+    rosbag
+        .create_topic(
+            &topic_name,
+            &TopicMetadata::new(
+                RosMessageType::VisualizationMessagesMarkerArray,
+                TopicSerializationFormat::CDR,
+                vec![QualityOfServiceProfile::new_for_static_tf_topic()],
+            ),
+        )
+        .expect("should work");
 
     for current_step in 0..2 {
         let timestamp =
             Utc.timestamp_opt(1579007185, 0).unwrap() + chrono::Duration::seconds(current_step);
         let marker_message_array =
             create_marker_array(&city_model, current_step * 10000, timestamp);
-        rosbag.append_message(&topic_name, &marker_message_array);
+        rosbag
+            .append_message(&topic_name, &marker_message_array)
+            .expect("should work");
     }
 
     rosbag.close();
@@ -59,8 +64,48 @@ fn create_marker_array(
             .unwrap()
             .members()
             .iter()
+            .map(|x| x.exterior())
         {
-            let marker_message = get_marker_message(vert_id, current_geometry, timestamp);
+            let marker_message = get_marker_message(
+                vert_id,
+                current_geometry,
+                timestamp,
+                std_msgs::ColorRGBA {
+                    r: 0.0,
+                    g: 0.0,
+                    b: 1.0,
+                    a: 1.0,
+                },
+            );
+            vert_id += current_geometry.points().len() as i64;
+            marker_message_array.markers.push(marker_message);
+        }
+    }
+
+    for current_member in city_model
+        .traffic_area()
+        .iter()
+        .filter(|x| x.lod2_multi_surface().is_some())
+    {
+        for current_geometry in current_member
+            .lod2_multi_surface()
+            .as_ref()
+            .unwrap()
+            .members()
+            .iter()
+            .map(|x| x.exterior())
+        {
+            let marker_message = get_marker_message(
+                vert_id,
+                current_geometry,
+                timestamp,
+                std_msgs::ColorRGBA {
+                    r: 0.0,
+                    g: 1.0,
+                    b: 0.0,
+                    a: 1.0,
+                },
+            );
             vert_id += current_geometry.points().len() as i64;
             marker_message_array.markers.push(marker_message);
         }
@@ -109,7 +154,12 @@ fn create_marker_array(
     marker_message_array
 }
 
-fn get_marker_message(start_id: i64, linear_ring: &LinearRing, timestamp: DateTime<Utc>) -> Marker {
+fn get_marker_message(
+    start_id: i64,
+    linear_ring: &LinearRing,
+    timestamp: DateTime<Utc>,
+    color: std_msgs::ColorRGBA,
+) -> Marker {
     let mut marker_message = Marker::default();
     let mut id = start_id;
 
@@ -122,12 +172,7 @@ fn get_marker_message(start_id: i64, linear_ring: &LinearRing, timestamp: DateTi
 
     //marker_message.pose = pose_message;
     marker_message.scale = nalgebra::Vector3::<f64>::new(0.1, 0.1, 0.1).into();
-    marker_message.color = std_msgs::ColorRGBA {
-        r: 0.0,
-        g: 0.0,
-        b: 1.0,
-        a: 1.0,
-    };
+    marker_message.color = color;
     marker_message.lifetime = Duration::MAX;
 
     for current_point in linear_ring.points().iter() {
@@ -150,7 +195,7 @@ fn read_bag(_rosbag_directory_path: PathBuf) {
     let rosbag_directory_path = PathBuf::from("~/markers_test_recorded/");
     let rosbag = RosbagOpenOptions::new()
         .read_write(true)
-        .open(&rosbag_directory_path)
+        .open(rosbag_directory_path)
         .unwrap();
 
     let ros = rosbag.get_all_topic_names();

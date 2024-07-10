@@ -5,16 +5,19 @@ authors.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "CLI tool for citygml converter"
+description = "CLI tool for converting CityGML data to other representations."
 
 
 [dependencies]
-ecitygml-converter = { version = "0.0.1-alpha.1", path = "../ecitygml-converter", registry = "custom" }
+ecitygml-converter = { version = "0.0.1-alpha.3", path = "../ecitygml-converter" }
 
+egml = { workspace = true }
 ecitygml = { workspace = true }
 egraphics = { workspace = true }
-erosbag = { workspace = true }
+erosbag = { workspace = true, optional = true }
+evoxel = { workspace = true, optional = true }
 
+thiserror = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 serde = { workspace = true, features = [ "derive" ] }
 quick-xml = { workspace = true, features = [ "serialize" ] }
@@ -22,3 +25,9 @@ itertools = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 nalgebra = { workspace = true }
+
+
+[features]
+default = ["rosbag", "voxel"]
+rosbag = ["dep:erosbag"]
+voxel = ["dep:evoxel"]

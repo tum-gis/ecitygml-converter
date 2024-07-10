@@ -1,3 +1,4 @@
+use egml::geometry::DirectPosition;
 use nalgebra::{Point3, Vector3};
 use std::path::PathBuf;
 use std::process::exit;
@@ -13,19 +14,34 @@ pub fn run(
 ) {
     info!("Start run on {}", input_file_path.to_str().unwrap());
     let now = Instant::now();
-    let citygml_model = ecitygml::io::CitygmlReader::new(input_file_path)
-        .with_corner_min(corner_min)
-        .with_corner_max(corner_max)
+    let citygml_model = ecitygml::io::CitygmlReader::from_path(input_file_path)
+        .unwrap()
         .finish()
         .unwrap();
     info!("Read model in {}ms", now.elapsed().as_millis());
+
+    let envelope = egml::geometry::Envelope::new(
+        corner_min.map_or_else(|| DirectPosition::MIN, |c| c.into()),
+        corner_max.map_or_else(|| DirectPosition::MAX, |c| c.into()),
+    )
+    .unwrap();
+    let citygml_model =
+        ecitygml::transform::filter::filter_by_bounding_box(citygml_model, &envelope).unwrap();
+    info!(
+        "Number of wall elements: {}",
+        citygml_model.wall_surface().len()
+    );
 
     let transformed_citygml_model = match translation_offset {
         Some(v) => ecitygml::transform::offset::offset_citygml_model(citygml_model, &v).unwrap(),
         _ => citygml_model,
     };
+    info!(
+        "Number of wall elements after transformed: {}",
+        transformed_citygml_model.wall_surface().len()
+    );
 
-    let triangle_mesh = ecitygml_converter::citymodel_to_mesh(transformed_citygml_model);
+    let triangle_mesh = ecitygml_converter::citymodel_to_mesh(transformed_citygml_model).unwrap();
     if triangle_mesh.is_empty() {
         info!("is empty");
         exit(1);

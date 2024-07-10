@@ -5,8 +5,14 @@ authors.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "Library for converting CityGML datasets"
+description = "Library for converting CityGML data to other representations."
 
 
 [dependencies]
-ecitygml-converter-core = { version = "0.0.1-alpha.1", path = "../ecitygml-converter-core", registry = "custom"  }
+ecitygml-converter-core = { version = "0.0.1-alpha.3", path = "../ecitygml-converter-core" }
+
+
+[features]
+default = ["rosbag", "voxel"]
+rosbag = []
+voxel = []

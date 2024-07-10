@@ -4,8 +4,12 @@ mod commands;
 extern crate quick_xml;
 extern crate serde;
 
-use crate::arguments::{Args, Commands};
-use crate::commands::{convert_to_graphics, convert_to_rosbag};
+use crate::arguments::{Arguments, Commands};
+use crate::commands::convert_to_graphics;
+#[cfg(feature = "rosbag")]
+use crate::commands::convert_to_rosbag;
+#[cfg(feature = "voxel")]
+use crate::commands::convert_to_voxel;
 use clap::Parser;
 use nalgebra::Point3;
 use nalgebra::Vector3;
@@ -14,9 +18,9 @@ use tracing::info;
 
 fn main() {
     tracing_subscriber::fmt::init();
-    let args = Args::parse();
+    let arguments = Arguments::parse();
 
-    match &args.command {
+    match &arguments.command {
         Commands::ConvertToGraphics {
             input_path,
             output_path,
@@ -59,6 +63,7 @@ fn main() {
                 translation_offset,
             );
         }
+        #[cfg(feature = "rosbag")]
         Commands::ConvertToRosbag {
             input_path,
             rosbag_directory_path,
@@ -85,6 +90,16 @@ fn main() {
                 corner_max,
                 translation_offset,
             );
+        }
+        #[cfg(feature = "voxel")]
+        Commands::ConvertToVoxel {
+            input_path,
+            output_path,
+        } => {
+            let input_file_path = Path::new(&input_path).canonicalize().unwrap();
+            let output_directory_path = PathBuf::from(&output_path);
+
+            convert_to_voxel::run(input_file_path, output_directory_path);
         }
     }
 }

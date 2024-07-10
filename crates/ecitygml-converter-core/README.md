@@ -1,6 +1,6 @@
-# ecitygml-converter
+# ecitygml-converter-core
 
-A Rust library for converting [CityGML](https://www.ogc.org/standard/citygml/) data to other representations.
+Core primitives and operations for converting [CityGML](https://www.ogc.org/standard/citygml/) data to other representations.
 
 > [!WARNING]  
 > The library is at an early stage of development.
