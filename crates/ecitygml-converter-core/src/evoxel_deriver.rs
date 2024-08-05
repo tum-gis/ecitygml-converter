@@ -1,32 +1,33 @@
 use chrono::Utc;
-use ecitygml::CitygmlModel;
 use ecoord::{ChannelId, Transform, TransformId};
-use egml::geometry::{DirectPosition, Triangle};
 use evoxel::VoxelGridInfo;
-
-use itertools::Itertools;
-use nalgebra::{Point3, Vector3};
-use std::collections::HashMap;
 
 use crate::error::Error;
 use crate::triangulation::triangulate;
+use ecitygml::model::city_model::CitygmlModel;
+use ecitygml::operations::FeatureWithGeometry;
+use egml::model::geometry::{DirectPosition, Triangle};
+use egml::operations::geometry::Geometry;
+use itertools::Itertools;
+use nalgebra::{Isometry3, Point3, Vector3};
 use polars::frame::DataFrame;
 use polars::prelude::{NamedFrom, Series};
 use rayon::prelude::*;
+use std::collections::HashMap;
 use tracing::info;
 
 pub fn citymodel_to_voxel(
-    city_model: CitygmlModel,
+    mut city_model: CitygmlModel,
     resolution: f64,
     distance_threshold: f64,
 ) -> Result<evoxel::VoxelGrid, Error> {
     let lower_corner: Vector3<f64> = (*city_model
-        .get_envelope()
+        .envelope()
         .ok_or(ecitygml::Error::ContainsNoMembers("".to_string()))?
         .lower_corner())
     .into();
-    let local_city_model =
-        ecitygml::transform::offset::offset_citygml_model(city_model, &(-lower_corner)).unwrap();
+
+    city_model.apply_transform(&Isometry3::new(-lower_corner, Default::default()));
 
     //let resolution = 0.1;
     //let _envelope = local_city_model.get_envelope();
@@ -40,7 +41,7 @@ pub fn citymodel_to_voxel(
     //let corner_min = city_model.get_min();
     //let corner_max = city_model.get_();
 
-    let all_triangulated_surfaces = triangulate(&local_city_model);
+    let all_triangulated_surfaces = triangulate(&city_model);
     let all_triangles: Vec<&Triangle> = all_triangulated_surfaces
         .iter()
         .flat_map(|t| t.patches())
@@ -116,11 +117,7 @@ fn derive_occupancy_indexes(
     resolution: f64,
     distance_threshold: f64,
 ) -> Vec<Point3<i64>> {
-    let envelope = triangle
-        .get_envelope()
-        .unwrap()
-        .enlarge(distance_threshold)
-        .unwrap();
+    let envelope = triangle.envelope().enlarge(distance_threshold).unwrap();
 
     let lower_corner_index: nalgebra::Point3<i64> = Point3::new(
         (envelope.lower_corner().x() / resolution).floor() as i64,

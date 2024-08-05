@@ -6,32 +6,34 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.0.1-alpha.3"
+version = "0.0.1-alpha.4"
 authors = ["Benedikt Schwab <benedikt.schwab@gmail.com>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/envis-space/ecitygml-converter"
 
 [workspace.dependencies]
-ecoord = { version = "0.0.1-alpha.3" }
-egml = { version = "0.0.1-alpha.3" }
-ecitygml = { version = "0.0.1-alpha.3" }
-egraphics = { version = "0.0.1-alpha.3" }
-erosbag = { version = "0.0.1-alpha.3" }
-evoxel = { version = "0.0.1-alpha.3" }
+ecoord = { version = "0.0.1-alpha.4" }
+egml = { version = "0.0.1-alpha.4" }
+ecitygml = { version = "0.0.1-alpha.4" }
+egraphics = { version = "0.0.1-alpha.4" }
+erosbag = { version = "0.0.1-alpha.4" }
+evoxel = { version = "0.0.1-alpha.4" }
 
 thiserror = "1.0"
-clap = "4.5.9"
+clap = "4.5.13"
 serde = "1.0.204"
-quick-xml = "0.36.0"
+serde_json = "1.0.122"
+quick-xml = "0.36.1"
 tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
 polars = "0.41.3"
 itertools = "0.13.0"
 nalgebra = "0.33.0"
-parry3d-f64 = "0.16.1"
+parry3d-f64 = "0.17.0"
 meshopt = "0.3.0"
 gltf = "1.4.1"
 gltf-json = "1.4.1"
 chrono = "0.4.38"
 rayon = "1.10.0"
+zstd = "0.13.2"

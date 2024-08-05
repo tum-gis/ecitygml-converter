@@ -1,5 +1,3 @@
-use ecitygml::CitygmlModel;
-use egml::geometry::LinearRing;
 use erosbag::ros_messages::{std_msgs, RosMessageType};
 use erosbag::{Rosbag, RosbagOpenOptions};
 use tracing::info;
@@ -15,6 +13,10 @@ use erosbag::topics::qos_profile::QualityOfServiceProfile;
 use erosbag::topics::topic::{TopicMetadata, TopicSerializationFormat};
 use nalgebra::{Isometry3, Point3, Quaternion, Translation3, UnitQuaternion, Vector3};
 
+use ecitygml::model::city_model::CitygmlModel;
+use ecitygml::model::transportation::TrafficSpace;
+use egml::model::geometry::LinearRing;
+use egml::operations::geometry::Geometry;
 use std::path::PathBuf;
 
 pub fn citymodel_to_rosbag(city_model: CitygmlModel, mut rosbag: Rosbag) {
@@ -54,17 +56,19 @@ fn create_marker_array(
     let mut vert_id = 0;
 
     for current_member in city_model
-        .wall_surface()
+        .building
         .iter()
-        .filter(|x| x.lod2_multi_surface().is_some())
+        .flat_map(|x| &x.wall_surface)
+        .filter(|x| x.thematic_surface.lod2_multi_surface.is_some())
     {
         for current_geometry in current_member
-            .lod2_multi_surface()
+            .thematic_surface
+            .lod2_multi_surface
             .as_ref()
             .unwrap()
-            .members()
+            .surface_member()
             .iter()
-            .map(|x| x.exterior())
+            .map(|x| &x.exterior)
         {
             let marker_message = get_marker_message(
                 vert_id,
@@ -83,17 +87,25 @@ fn create_marker_array(
     }
 
     for current_member in city_model
-        .traffic_area()
+        .road
         .iter()
-        .filter(|x| x.lod2_multi_surface().is_some())
+        .flat_map(|x| {
+            let mut traffic_spaces: Vec<&TrafficSpace> =
+                x.section.iter().flat_map(|y| &y.traffic_space).collect();
+            traffic_spaces.extend(x.intersection.iter().flat_map(|y| &y.traffic_space));
+            traffic_spaces
+        })
+        .flat_map(|x| &x.traffic_area)
+        .filter(|x| x.thematic_surface.lod2_multi_surface.is_some())
     {
         for current_geometry in current_member
-            .lod2_multi_surface()
+            .thematic_surface
+            .lod2_multi_surface
             .as_ref()
             .unwrap()
-            .members()
+            .surface_member()
             .iter()
-            .map(|x| x.exterior())
+            .map(|x| &x.exterior)
         {
             let marker_message = get_marker_message(
                 vert_id,
@@ -175,7 +187,7 @@ fn get_marker_message(
     marker_message.color = color;
     marker_message.lifetime = Duration::MAX;
 
-    for current_point in linear_ring.points().iter() {
+    for current_point in linear_ring.points().into_iter() {
         id += 1;
 
         let current_vertex: Point3<f64> = (*current_point).into();

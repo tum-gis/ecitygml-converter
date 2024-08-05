@@ -3,3 +3,4 @@ pub mod convert_to_graphics;
 pub mod convert_to_rosbag;
 #[cfg(feature = "voxel")]
 pub mod convert_to_voxel;
+pub mod extract_planes;

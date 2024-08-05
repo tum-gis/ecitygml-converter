@@ -11,6 +11,9 @@ mod triangulation;
 pub use error::Error;
 
 #[doc(inline)]
+pub use triangulation::triangulate;
+
+#[doc(inline)]
 pub use egraphics_deriver::citymodel_to_mesh;
 
 #[cfg(feature = "rosbag")]

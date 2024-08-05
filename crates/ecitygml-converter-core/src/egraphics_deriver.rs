@@ -1,7 +1,7 @@
-use ecitygml::CitygmlModel;
-
 use crate::error::Error;
 use crate::triangulation::triangulate;
+use ecitygml::model::city_model::CitygmlModel;
+use egml::operations::geometry::Geometry;
 use nalgebra::Point3;
 
 pub fn citymodel_to_mesh(city_model: CitygmlModel) -> Result<egraphics::TriangleMesh, Error> {
@@ -16,12 +16,12 @@ pub fn citymodel_to_mesh(city_model: CitygmlModel) -> Result<egraphics::Triangle
     Ok(triangle_mesh)
 }
 
-fn convert_to_graphics_triangle(triangle: &egml::geometry::Triangle) -> egraphics::Triangle {
+fn convert_to_graphics_triangle(triangle: &egml::model::geometry::Triangle) -> egraphics::Triangle {
     let points: Vec<Point3<f32>> = triangle
         .points()
         .iter()
         .map(|&p| {
-            let point: Point3<f32> = p.into();
+            let point: Point3<f32> = (*p).into();
             point
         })
         .collect();

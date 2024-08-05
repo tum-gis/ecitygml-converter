@@ -5,14 +5,14 @@ extern crate quick_xml;
 extern crate serde;
 
 use crate::arguments::{Arguments, Commands};
-use crate::commands::convert_to_graphics;
 #[cfg(feature = "rosbag")]
 use crate::commands::convert_to_rosbag;
 #[cfg(feature = "voxel")]
 use crate::commands::convert_to_voxel;
+use crate::commands::{convert_to_graphics, extract_planes};
 use clap::Parser;
-use nalgebra::Point3;
 use nalgebra::Vector3;
+use nalgebra::{Isometry3, Point3};
 use std::path::{Path, PathBuf};
 use tracing::info;
 
@@ -60,7 +60,7 @@ fn main() {
                 output_gltf_file_path,
                 corner_min,
                 corner_max,
-                translation_offset,
+                translation_offset.map(|x| Isometry3::new(x, Default::default())),
             );
         }
         #[cfg(feature = "rosbag")]
@@ -95,11 +95,27 @@ fn main() {
         Commands::ConvertToVoxel {
             input_path,
             output_path,
+            resolution,
+            distance_threshold,
         } => {
             let input_file_path = Path::new(&input_path).canonicalize().unwrap();
             let output_directory_path = PathBuf::from(&output_path);
 
-            convert_to_voxel::run(input_file_path, output_directory_path);
+            convert_to_voxel::run(
+                input_file_path,
+                output_directory_path,
+                *resolution,
+                *distance_threshold,
+            );
+        }
+        Commands::ExtractPlanes {
+            input_path,
+            output_path,
+        } => {
+            let input_file_path = Path::new(&input_path).canonicalize().unwrap();
+            let output_directory_path = PathBuf::from(&output_path);
+
+            extract_planes::run(input_file_path, output_directory_path);
         }
     }
 }

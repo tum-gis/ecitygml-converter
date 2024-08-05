@@ -62,5 +62,24 @@ pub enum Commands {
         /// Path to the output directory
         #[clap(short, long)]
         output_path: String,
+
+        /// Edge length of a voxel
+        #[clap(long, default_value_t = 0.1)]
+        resolution: f64,
+
+        /// Distance between a model geometry and the voxel center, from when a voxel is considered occupied
+        #[clap(long, default_value_t = 0.3)]
+        distance_threshold: f64,
+    },
+
+    /// Convert from CityGML to a voxel representation
+    ExtractPlanes {
+        /// Path to the CityGML dataset
+        #[clap(short, long)]
+        input_path: String,
+
+        /// Path to the output directory
+        #[clap(short, long)]
+        output_path: String,
     },
 }

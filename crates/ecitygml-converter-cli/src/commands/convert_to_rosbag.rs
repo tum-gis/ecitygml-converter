@@ -1,7 +1,9 @@
+use ecitygml::operations::FeatureWithGeometry;
 use ecitygml_converter::citymodel_to_rosbag;
-use egml::geometry::DirectPosition;
+use egml::model::geometry;
+use egml::model::geometry::DirectPosition;
 use erosbag::RosbagOpenOptions;
-use nalgebra::{Point3, Vector3};
+use nalgebra::{Isometry3, Point3, Vector3};
 use std::fs;
 use std::path::PathBuf;
 use std::time::Instant;
@@ -20,14 +22,14 @@ pub fn run(
         .unwrap()
         .finish()
         .unwrap();
-    info!("Read model in {}ms", now.elapsed().as_millis());
+    info!("Read model in {:.3?}", now.elapsed());
 
-    let envelope = egml::geometry::Envelope::new(
+    let envelope = geometry::Envelope::new(
         corner_min.map_or_else(|| DirectPosition::MIN, |c| c.into()),
         corner_max.map_or_else(|| DirectPosition::MAX, |c| c.into()),
     )
     .unwrap();
-    let citygml_model =
+    let mut citygml_model =
         ecitygml::transform::filter::filter_by_bounding_box(citygml_model, &envelope).unwrap();
 
     // citygml_model.members.first().unwrap().
@@ -42,9 +44,8 @@ pub fn run(
         .open(&rosbag_directory_path)
         .unwrap();
 
-    let transformed_citygml_model = match translation_offset {
-        Some(v) => ecitygml::transform::offset::offset_citygml_model(citygml_model, &v).unwrap(),
-        _ => citygml_model,
-    };
-    citymodel_to_rosbag(transformed_citygml_model, rosbag);
+    if let Some(v) = translation_offset {
+        citygml_model.apply_transform(&Isometry3::new(v, Default::default()));
+    }
+    citymodel_to_rosbag(citygml_model, rosbag);
 }
