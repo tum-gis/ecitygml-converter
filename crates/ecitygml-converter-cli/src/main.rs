@@ -1,35 +1,38 @@
-mod arguments;
+mod cli;
 mod commands;
+mod error;
 
 extern crate quick_xml;
 extern crate serde;
 
-use crate::arguments::{Arguments, Commands};
+use crate::cli::{Cli, Commands};
 #[cfg(feature = "rosbag")]
 use crate::commands::convert_to_rosbag;
 #[cfg(feature = "voxel")]
 use crate::commands::convert_to_voxel;
 use crate::commands::{convert_to_graphics, extract_planes};
+use anyhow::Result;
 use clap::Parser;
 use nalgebra::Vector3;
 use nalgebra::{Isometry3, Point3};
 use std::path::{Path, PathBuf};
 use tracing::info;
 
-fn main() {
+fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
-    let arguments = Arguments::parse();
+    let cli = Cli::parse();
 
-    match &arguments.command {
+    match &cli.command {
         Commands::ConvertToGraphics {
             input_path,
             output_path,
             corner_min,
             corner_max,
             offset,
+            derive_obj_file,
         } => {
             info!("Transform to a graphics format.");
-            let input_file_path = Path::new(&input_path).canonicalize().unwrap();
+            let input_file_path = Path::new(&input_path).canonicalize()?;
 
             let corner_min: Option<Point3<f64>> =
                 corner_min.as_ref().map(|v| Point3::new(v[0], v[1], v[2]));
@@ -61,7 +64,8 @@ fn main() {
                 corner_min,
                 corner_max,
                 translation_offset.map(|x| Isometry3::new(x, Default::default())),
-            );
+                *derive_obj_file,
+            )?;
         }
         #[cfg(feature = "rosbag")]
         Commands::ConvertToRosbag {
@@ -72,7 +76,7 @@ fn main() {
             offset,
         } => {
             info!("Transform to a ROS bag");
-            let input_file_path = Path::new(&input_path).canonicalize().unwrap();
+            let input_file_path = Path::new(&input_path).canonicalize()?;
 
             let corner_min: Option<Point3<f64>> =
                 corner_min.as_ref().map(|v| Point3::new(v[0], v[1], v[2]));
@@ -89,7 +93,7 @@ fn main() {
                 corner_min,
                 corner_max,
                 translation_offset,
-            );
+            )?;
         }
         #[cfg(feature = "voxel")]
         Commands::ConvertToVoxel {
@@ -98,7 +102,7 @@ fn main() {
             resolution,
             distance_threshold,
         } => {
-            let input_file_path = Path::new(&input_path).canonicalize().unwrap();
+            let input_file_path = Path::new(&input_path).canonicalize()?;
             let output_directory_path = PathBuf::from(&output_path);
 
             convert_to_voxel::run(
@@ -106,16 +110,18 @@ fn main() {
                 output_directory_path,
                 *resolution,
                 *distance_threshold,
-            );
+            )?;
         }
         Commands::ExtractPlanes {
             input_path,
             output_path,
         } => {
-            let input_file_path = Path::new(&input_path).canonicalize().unwrap();
+            let input_file_path = Path::new(&input_path).canonicalize()?;
             let output_directory_path = PathBuf::from(&output_path);
 
-            extract_planes::run(input_file_path, output_directory_path);
+            extract_planes::run(input_file_path, output_directory_path)?;
         }
     }
+
+    Ok(())
 }

@@ -11,7 +11,7 @@ use egml::operations::geometry::Geometry;
 use itertools::Itertools;
 use nalgebra::{Isometry3, Point3, Vector3};
 use polars::frame::DataFrame;
-use polars::prelude::{NamedFrom, Series};
+use polars::prelude::{Column, NamedFrom};
 use rayon::prelude::*;
 use std::collections::HashMap;
 use tracing::info;
@@ -63,19 +63,19 @@ pub fn citymodel_to_voxel(
 
     //all_triangles.first().unwrap().env
 
-    let x_series = Series::new(
-        evoxel::VoxelDataColumnNames::X.as_str(),
+    let x_column = Column::new(
+        evoxel::VoxelDataColumnType::X.into(),
         occupied_voxels.iter().map(|v| v.x).collect::<Vec<i64>>(),
     );
-    let y_series = Series::new(
-        evoxel::VoxelDataColumnNames::Y.as_str(),
+    let y_column = Column::new(
+        evoxel::VoxelDataColumnType::Y.into(),
         occupied_voxels.iter().map(|v| v.y).collect::<Vec<i64>>(),
     );
-    let z_series = Series::new(
-        evoxel::VoxelDataColumnNames::Z.as_str(),
+    let z_column = Column::new(
+        evoxel::VoxelDataColumnType::Z.into(),
         occupied_voxels.iter().map(|v| v.z).collect::<Vec<i64>>(),
     );
-    let data: DataFrame = DataFrame::new(vec![x_series, y_series, z_series]).unwrap();
+    let data: DataFrame = DataFrame::new(vec![x_column, y_column, z_column]).unwrap();
     //let now = Instant::now();
     /*let data = data
     .unique(

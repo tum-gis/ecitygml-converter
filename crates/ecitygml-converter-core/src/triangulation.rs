@@ -1,46 +1,32 @@
 use ecitygml::model::city_model::CitygmlModel;
-use ecitygml::operations::{GeometryCollector, Visitable};
+use ecitygml::operations::{CityObjectGeometryCollection, GeometryCollector, Visitable};
 use egml::model::geometry::TriangulatedSurface;
-use egml::transform::triangulate::{triangulate_multi_surface, triangulate_solid};
+use egml::operations::triangulate::Triangulate;
 use tracing::warn;
 
 pub fn triangulate(city_model: &CitygmlModel) -> Vec<TriangulatedSurface> {
     let mut geometry_collector = GeometryCollector::new();
     city_model.accept(&mut geometry_collector);
 
+    let all_triangulated_surfaces: Vec<TriangulatedSurface> = geometry_collector
+        .city_objects
+        .values()
+        .flat_map(triangulate_city_object_geometry)
+        .collect();
+
+    all_triangulated_surfaces
+}
+
+fn triangulate_city_object_geometry(
+    city_object_geometry_collection: &CityObjectGeometryCollection,
+) -> Vec<TriangulatedSurface> {
     let mut all_triangulated_surfaces: Vec<TriangulatedSurface> = Vec::new();
 
-    /*for current_wall_surface in city_model.building.iter().flat_map(|x| &x.wall_surface) {
-        let id = current_wall_surface
-            .thematic_surface
-            .city_object
-            .gml
-            .id
-            .clone();
-        //println!("id: {}", id.to_string());
-
-        if let Some(g) = &current_wall_surface.thematic_surface.lod3_multi_surface {
-            let triangulated_surface = triangulate_multi_surface(g).map_err(|e| {
-                warn!(
-                    "error during triangulation of multi_surface ({}) with id: {}",
-                    id.to_string(),
-                    e
-                )
-            });
-
-            if let Ok(o) = triangulated_surface {
-                all_triangulated_surfaces.extend(o);
-            }
-        }
-
-        //for in current_wall_surface.thematic_surface.
-    }*/
-
-    let triangulated_surfaces: Vec<TriangulatedSurface> = geometry_collector
-        .multi_surface
-        .iter()
-        .flat_map(|x| {
-            triangulate_multi_surface(x)
+    let triangulated_surfaces: Vec<TriangulatedSurface> = city_object_geometry_collection
+        .multi_surfaces
+        .values()
+        .filter_map(|x| {
+            x.triangulate()
                 .map_err(|e| {
                     warn!(
                         "error during triangulation of multi_surface ({}) with id: {}",
@@ -50,15 +36,14 @@ pub fn triangulate(city_model: &CitygmlModel) -> Vec<TriangulatedSurface> {
                 })
                 .ok()
         })
-        .flatten()
         .collect();
     all_triangulated_surfaces.extend(triangulated_surfaces);
 
-    let triangulated_surfaces: Vec<TriangulatedSurface> = geometry_collector
-        .solid
-        .iter()
-        .flat_map(|x| {
-            triangulate_solid(x)
+    let triangulated_surfaces: Vec<TriangulatedSurface> = city_object_geometry_collection
+        .solids
+        .values()
+        .filter_map(|x| {
+            x.triangulate()
                 .map_err(|e| {
                     warn!(
                         "error during triangulation of solid ({}) with id: {}",
@@ -68,7 +53,6 @@ pub fn triangulate(city_model: &CitygmlModel) -> Vec<TriangulatedSurface> {
                 })
                 .ok()
         })
-        .flatten()
         .collect();
     all_triangulated_surfaces.extend(triangulated_surfaces);
 

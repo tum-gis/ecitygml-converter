@@ -9,8 +9,8 @@ description = "Library for converting CityGML data to other representations."
 
 
 [dependencies]
-ecitygml-converter-core = { version = "0.0.1-alpha.4", path = "../ecitygml-converter-core" }
-ecitygml-converter-io = { version = "0.0.1-alpha.4", path = "../ecitygml-converter-io" }
+ecitygml-converter-core = { version = "0.0.1-alpha.8", path = "../ecitygml-converter-core" }
+ecitygml-converter-io = { version = "0.0.1-alpha.8", path = "../ecitygml-converter-io" }
 
 
 [features]

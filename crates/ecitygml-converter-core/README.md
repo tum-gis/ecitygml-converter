@@ -1,6 +1,6 @@
 # ecitygml-converter-core
 
-Core primitives and operations for converting [CityGML](https://www.ogc.org/standard/citygml/) data to other representations.
+Core primitives and operations for converting [CityGML](https://www.ogc.org/standards/citygml/) data to other representations.
 
 The library is at an early stage of development.
 

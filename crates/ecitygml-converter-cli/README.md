@@ -1,6 +1,6 @@
 # ecitygml-converter-cli
 
-CLI tool for converting [CityGML](https://www.ogc.org/standard/citygml/) data to other representations.
+CLI tool for converting [CityGML](https://www.ogc.org/standards/citygml/) data to other representations.
 
 The library is at an early stage of development.
 

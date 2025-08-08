@@ -9,7 +9,7 @@ description = "CLI tool for converting CityGML data to other representations."
 
 
 [dependencies]
-ecitygml-converter = { version = "0.0.1-alpha.4", path = "../ecitygml-converter" }
+ecitygml-converter = { version = "0.0.1-alpha.8", path = "../ecitygml-converter" }
 
 egml = { workspace = true }
 ecitygml = { workspace = true }
@@ -18,9 +18,10 @@ erosbag = { workspace = true, optional = true }
 evoxel = { workspace = true, optional = true }
 
 thiserror = { workspace = true }
+anyhow = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
-serde = { workspace = true, features = [ "derive" ] }
-quick-xml = { workspace = true, features = [ "serialize" ] }
+serde = { workspace = true, features = ["derive"] }
+quick-xml = { workspace = true, features = ["serialize"] }
 itertools = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }

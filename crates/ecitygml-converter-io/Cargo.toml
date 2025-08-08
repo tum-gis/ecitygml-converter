@@ -9,7 +9,7 @@ description = "IO operations for converting CityGML data to other representation
 
 
 [dependencies]
-ecitygml-converter-core = { version = "0.0.1-alpha.4", path = "../ecitygml-converter-core" }
+ecitygml-converter-core = { version = "0.0.1-alpha.8", path = "../ecitygml-converter-core" }
 
 ecoord = { workspace = true }
 egml = { workspace = true }

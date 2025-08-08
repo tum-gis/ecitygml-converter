@@ -2,7 +2,7 @@ use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None, propagate_version = true)]
-pub struct Arguments {
+pub struct Cli {
     #[clap(subcommand)]
     pub command: Commands,
 }
@@ -28,6 +28,10 @@ pub enum Commands {
         /// offset which is subtracted from the geocoordinates
         #[clap(long, number_of_values = 3, allow_hyphen_values = true)]
         offset: Option<Vec<f64>>,
+
+        /// Convert the exported glTF 2.0 also to OBJ
+        #[clap(long, default_value_t = false)]
+        derive_obj_file: bool,
     },
 
     #[cfg(feature = "rosbag")]

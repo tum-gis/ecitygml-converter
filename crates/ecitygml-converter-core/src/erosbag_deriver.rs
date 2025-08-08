@@ -1,29 +1,27 @@
-use erosbag::ros_messages::{std_msgs, RosMessageType};
-use erosbag::{Rosbag, RosbagOpenOptions};
+use erosbag::Rosbag;
+use erosbag::ros_messages::std_msgs;
 use tracing::info;
 
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{DateTime, Utc};
 
 use erosbag::ros_messages::builtin_msgs::Duration;
 use erosbag::ros_messages::geometry_msgs::Pose;
 use erosbag::ros_messages::visualization_msgs::{
     Marker, MarkerActionType, MarkerArray, MarkerObjectType,
 };
-use erosbag::topics::qos_profile::QualityOfServiceProfile;
-use erosbag::topics::topic::{TopicMetadata, TopicSerializationFormat};
 use nalgebra::{Isometry3, Point3, Quaternion, Translation3, UnitQuaternion, Vector3};
 
 use ecitygml::model::city_model::CitygmlModel;
 use ecitygml::model::transportation::TrafficSpace;
 use egml::model::geometry::LinearRing;
 use egml::operations::geometry::Geometry;
-use std::path::PathBuf;
 
-pub fn citymodel_to_rosbag(city_model: CitygmlModel, mut rosbag: Rosbag) {
+pub fn citymodel_to_rosbag(city_model: CitygmlModel, rosbag: Rosbag) {
     info!("Number of objects: {}", city_model.number_of_objects());
 
     let topic_name: String = "/marker_array".to_string();
-    rosbag
+    todo!("migrate to ROS bag MCAP encoding");
+    /*rosbag
         .create_topic(
             &topic_name,
             &TopicMetadata::new(
@@ -31,8 +29,7 @@ pub fn citymodel_to_rosbag(city_model: CitygmlModel, mut rosbag: Rosbag) {
                 TopicSerializationFormat::CDR,
                 vec![QualityOfServiceProfile::new_for_static_tf_topic()],
             ),
-        )
-        .expect("should work");
+        )?;
 
     for current_step in 0..2 {
         let timestamp =
@@ -40,11 +37,10 @@ pub fn citymodel_to_rosbag(city_model: CitygmlModel, mut rosbag: Rosbag) {
         let marker_message_array =
             create_marker_array(&city_model, current_step * 10000, timestamp);
         rosbag
-            .append_message(&topic_name, &marker_message_array)
-            .expect("should work");
+            .append_message(&topic_name, &marker_message_array)?;
     }
 
-    rosbag.close();
+    rosbag.close();*/
 }
 
 fn create_marker_array(
@@ -201,16 +197,4 @@ fn get_marker_message(
     }
 
     marker_message
-}
-
-fn read_bag(_rosbag_directory_path: PathBuf) {
-    let rosbag_directory_path = PathBuf::from("~/markers_test_recorded/");
-    let rosbag = RosbagOpenOptions::new()
-        .read_write(true)
-        .open(rosbag_directory_path)
-        .unwrap();
-
-    let ros = rosbag.get_all_topic_names();
-    rosbag.get_visualization_markers(&"/marker".to_string());
-    info!("test {:?}", ros);
 }
