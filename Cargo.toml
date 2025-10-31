@@ -6,35 +6,35 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.0.1-alpha.8"
+version = "0.0.1-alpha.9"
 authors = ["Benedikt Schwab <benedikt.schwab@gmail.com>"]
 edition = "2024"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/envis-space/ecitygml-converter"
 
 [workspace.dependencies]
-ecoord = { version = "0.0.1-alpha.8" }
-egml = { version = "0.0.1-alpha.8" }
-ecitygml = { version = "0.0.1-alpha.8" }
-egraphics = { version = "0.0.1-alpha.8" }
-erosbag = { version = "0.0.1-alpha.8" }
-evoxel = { version = "0.0.1-alpha.8" }
+ecoord = { version = "0.0.1-alpha.9" }
+egml = { version = "0.0.1-alpha.9" }
+ecitygml = { version = "0.0.1-alpha.9" }
+egraphics = { version = "0.0.1-alpha.9" }
+erosbag = { version = "0.0.1-alpha.9" }
+evoxel = { version = "0.0.1-alpha.9" }
 
-thiserror = "2.0.12"
-anyhow = "1.0.98"
-clap = "4.5.42"
-serde = "1.0.219"
-serde_json = "1.0.142"
-quick-xml = "0.38.1"
+thiserror = "2.0.17"
+anyhow = "1.0.100"
+clap = "4.5.50"
+serde = "1.0.228"
+serde_json = "1.0.145"
+quick-xml = "0.38.3"
 tracing = "0.1.41"
-tracing-subscriber = "0.3.19"
-polars = "0.49.1"
+tracing-subscriber = "0.3.20"
+polars = "0.51.0"
 itertools = "0.14.0"
-nalgebra = "0.34.0"
-parry3d-f64 = "0.22.0"
-meshopt = "0.5.0"
+nalgebra = "0.34.1"
+parry3d-f64 = "0.25.1"
+meshopt = "0.6.2"
 gltf = "1.4.1"
 gltf-json = "1.4.1"
-chrono = "0.4.41"
-rayon = "1.10.0"
+chrono = "0.4.42"
+rayon = "1.11.0"
 zstd = "0.13.3"

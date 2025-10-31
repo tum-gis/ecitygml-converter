@@ -3,20 +3,20 @@ use ecitygml::operations::FeatureWithGeometry;
 use egml::model::geometry;
 use egml::model::geometry::DirectPosition;
 use nalgebra::{Isometry3, Point3, Vector3};
-use std::path::PathBuf;
+use std::path::Path;
 use std::process::exit;
 use std::time::Instant;
 use tracing::{info, warn};
 
 pub fn run(
-    input_file_path: PathBuf,
-    output_gltf_file_path: PathBuf,
+    input_file_path: impl AsRef<Path>,
+    output_gltf_file_path: impl AsRef<Path>,
     corner_min: Option<Point3<f64>>,
     corner_max: Option<Point3<f64>>,
     transform: Option<Isometry3<f64>>,
     derive_obj_file: bool,
 ) -> Result<(), Error> {
-    info!("Start run on {}", input_file_path.to_str().unwrap());
+    info!("Start run on {}", input_file_path.as_ref().display());
     let now = Instant::now();
     let citygml_model = ecitygml::io::CitygmlReader::from_path(input_file_path)?.finish()?;
     info!("Read model in {:.3?}", now.elapsed());

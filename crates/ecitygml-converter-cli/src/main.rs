@@ -15,7 +15,7 @@ use anyhow::Result;
 use clap::Parser;
 use nalgebra::Vector3;
 use nalgebra::{Isometry3, Point3};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use tracing::info;
 
 fn main() -> Result<()> {
@@ -32,8 +32,6 @@ fn main() -> Result<()> {
             derive_obj_file,
         } => {
             info!("Transform to a graphics format.");
-            let input_file_path = Path::new(&input_path).canonicalize()?;
-
             let corner_min: Option<Point3<f64>> =
                 corner_min.as_ref().map(|v| Point3::new(v[0], v[1], v[2]));
             let corner_max: Option<Point3<f64>> =
@@ -44,14 +42,16 @@ fn main() -> Result<()> {
             let output_gltf_file_path = if output_path.is_some() {
                 PathBuf::from(output_path.as_ref().unwrap())
             } else {
-                let target_directory_name = input_file_path
+                let target_directory_name = input_path
+                    .canonicalize()?
                     .file_stem()
                     .unwrap()
                     .to_str()
                     .unwrap()
                     .to_owned()
                     + "_graphic_formats";
-                input_file_path
+                input_path
+                    .canonicalize()?
                     .parent()
                     .unwrap()
                     .join(target_directory_name)
@@ -59,7 +59,7 @@ fn main() -> Result<()> {
             .join(PathBuf::from("model.gltf"));
 
             convert_to_graphics::run(
-                input_file_path,
+                input_path,
                 output_gltf_file_path,
                 corner_min,
                 corner_max,
@@ -76,8 +76,6 @@ fn main() -> Result<()> {
             offset,
         } => {
             info!("Transform to a ROS bag");
-            let input_file_path = Path::new(&input_path).canonicalize()?;
-
             let corner_min: Option<Point3<f64>> =
                 corner_min.as_ref().map(|v| Point3::new(v[0], v[1], v[2]));
             let corner_max: Option<Point3<f64>> =
@@ -85,11 +83,9 @@ fn main() -> Result<()> {
             let translation_offset: Option<Vector3<f64>> =
                 offset.as_ref().map(|v| Vector3::new(v[0], v[1], v[2]));
 
-            let output_gltf_file_path = PathBuf::from(rosbag_directory_path);
-
             convert_to_rosbag::run(
-                input_file_path,
-                output_gltf_file_path,
+                input_path.canonicalize()?,
+                rosbag_directory_path,
                 corner_min,
                 corner_max,
                 translation_offset,
@@ -102,24 +98,13 @@ fn main() -> Result<()> {
             resolution,
             distance_threshold,
         } => {
-            let input_file_path = Path::new(&input_path).canonicalize()?;
-            let output_directory_path = PathBuf::from(&output_path);
-
-            convert_to_voxel::run(
-                input_file_path,
-                output_directory_path,
-                *resolution,
-                *distance_threshold,
-            )?;
+            convert_to_voxel::run(input_path, output_path, *resolution, *distance_threshold)?;
         }
         Commands::ExtractPlanes {
             input_path,
             output_path,
         } => {
-            let input_file_path = Path::new(&input_path).canonicalize()?;
-            let output_directory_path = PathBuf::from(&output_path);
-
-            extract_planes::run(input_file_path, output_directory_path)?;
+            extract_planes::run(input_path.canonicalize()?, output_path)?;
         }
     }
 

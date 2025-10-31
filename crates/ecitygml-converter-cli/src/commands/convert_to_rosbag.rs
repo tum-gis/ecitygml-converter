@@ -6,18 +6,18 @@ use egml::model::geometry::DirectPosition;
 use erosbag::Rosbag;
 use nalgebra::{Isometry3, Point3, Vector3};
 use std::fs;
-use std::path::PathBuf;
+use std::path::Path;
 use std::time::Instant;
 use tracing::{info, warn};
 
 pub fn run(
-    input_file_path: PathBuf,
-    rosbag_directory_path: PathBuf,
+    input_file_path: impl AsRef<Path>,
+    rosbag_directory_path: impl AsRef<Path>,
     corner_min: Option<Point3<f64>>,
     corner_max: Option<Point3<f64>>,
     translation_offset: Option<Vector3<f64>>,
 ) -> Result<(), Error> {
-    info!("Start run on {}", input_file_path.to_str().unwrap());
+    info!("Start run on {}", input_file_path.as_ref().display());
     let now = Instant::now();
     let citygml_model = ecitygml::io::CitygmlReader::from_path(input_file_path)?.finish()?;
     info!("Read model in {:.3?}", now.elapsed());
@@ -30,12 +30,15 @@ pub fn run(
         ecitygml::transform::filter::filter_by_bounding_box(citygml_model, &envelope)?;
 
     // citygml_model.members.first().unwrap().
-    if rosbag_directory_path.exists() {
+    if rosbag_directory_path.as_ref().exists() {
         warn!("Removing old rosbag");
         fs::remove_dir_all(&rosbag_directory_path)?;
     }
 
-    info!("Open rosbag of path: {}", rosbag_directory_path.display());
+    info!(
+        "Open rosbag of path: {}",
+        rosbag_directory_path.as_ref().display()
+    );
     let rosbag = Rosbag::new(&rosbag_directory_path)?;
 
     if let Some(v) = translation_offset {
