@@ -2,7 +2,7 @@ use crate::error::Error;
 use crate::error::Error::{InvalidFileExtension, NoFileExtension};
 use crate::planes::write_impl::write_plane_document;
 use crate::planes::{FILE_EXTENSION_JSON_COMPRESSED, FILE_EXTENSION_JSON_UNCOMPRESSED};
-use ecitygml::operations::GeometryCollector;
+use ecitygml::arena::CityModelArena;
 use std::fs::{File, OpenOptions};
 use std::io::{BufWriter, Write};
 use std::path::Path;
@@ -34,10 +34,10 @@ impl<W: Write> PlanesWriter<W> {
         self
     }
 
-    pub fn finish(self, geometry_collector: GeometryCollector) -> Result<(), Error> {
+    pub fn finish(self, city_model_arena: CityModelArena) -> Result<(), Error> {
         write_plane_document(
             BufWriter::new(self.writer),
-            geometry_collector,
+            city_model_arena,
             self.compression_level,
         )?;
         Ok(())

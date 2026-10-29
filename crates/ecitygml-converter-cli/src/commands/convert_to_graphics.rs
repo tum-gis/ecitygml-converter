@@ -1,72 +1,86 @@
+use crate::cli::ConvertToGraphicsArgs;
 use crate::error::Error;
-use ecitygml::operations::FeatureWithGeometry;
-use egml::model::geometry;
-use egml::model::geometry::DirectPosition;
-use nalgebra::{Isometry3, Point3, Vector3};
-use std::path::Path;
-use std::process::exit;
 use std::time::Instant;
-use tracing::{info, warn};
+use tracing::info;
 
-pub fn run(
-    input_file_path: impl AsRef<Path>,
-    output_gltf_file_path: impl AsRef<Path>,
-    corner_min: Option<Point3<f64>>,
-    corner_max: Option<Point3<f64>>,
-    transform: Option<Isometry3<f64>>,
-    derive_obj_file: bool,
-) -> Result<(), Error> {
-    info!("Start run on {}", input_file_path.as_ref().display());
+pub fn run(args: &ConvertToGraphicsArgs) -> Result<(), Error> {
+    let lod_filter = args.lod_filter()?;
+
+    info!("Start run on {}", args.input_path.display());
     let now = Instant::now();
-    let citygml_model = ecitygml::io::CitygmlReader::from_path(input_file_path)?.finish()?;
+    let city_model = ecitygml::io::GmlReader::from_path(&args.input_path)
+        .and_then(|reader| {
+            reader
+                .with_rebuild_object_bounds(!args.skip_rebuilding_object_bounds)
+                .finish()
+        })
+        .map_err(|source| Error::ReadInput {
+            path: args.input_path.clone(),
+            source,
+        })?;
     info!("Read model in {:.3?}", now.elapsed());
 
-    let filter_envelope = geometry::Envelope::new(
-        corner_min.map_or_else(|| DirectPosition::MIN, |c| c.into()),
-        corner_max.map_or_else(|| DirectPosition::MAX, |c| c.into()),
+    let translation = args.translation_vector(&city_model);
+    if let Some(t) = translation {
+        info!("Translating by {} {} {}", t.x, t.y, t.z);
+    }
+
+    let scene = ecitygml_converter::derive_scene_from_city_model(
+        city_model,
+        args.corner_min(),
+        args.corner_max(),
+        translation,
+        &lod_filter,
+        args.include_multi_surfaces(),
+        args.include_solids(),
     )?;
-    let mut citygml_model =
-        ecitygml::transform::filter::filter_by_bounding_box(citygml_model, &filter_envelope)?;
-    info!(
-        "Number of wall elements: {}",
-        citygml_model
-            .building
-            .iter()
-            .fold(0, |acc, x| acc + x.wall_surface.len())
-    );
 
-    if let Some(isometry) = transform {
-        citygml_model.apply_transform(&isometry);
-    } else {
-        let citygml_model_envelope = citygml_model.envelope().unwrap();
-        warn!(
-            "No transform defined, applying the lower corner {}",
-            citygml_model_envelope.lower_corner()
-        );
-        let translation: Vector3<f64> = -Vector3::from(citygml_model_envelope.lower_corner());
-        citygml_model.apply_transform(&Isometry3::new(translation, Default::default()));
-    }
-
-    info!(
-        "Number of wall elements after transformed: {}",
-        citygml_model
-            .building
-            .iter()
-            .fold(0, |acc, x| acc + x.wall_surface.len())
-    );
-
-    let triangle_mesh = ecitygml_converter::citymodel_to_mesh(citygml_model)?;
-    if triangle_mesh.is_empty() {
-        info!("is empty");
-        exit(1);
-    }
-
+    info!("Writing to {}", args.output_path.display());
     let now = Instant::now();
-    egraphics::io::EgraphicsExporter::new(output_gltf_file_path)
-        .with_derive_obj_file(derive_obj_file)
-        .with_create_parent_directories(true)
-        .finish(triangle_mesh)?;
+    egraphics::io::EgraphicsWriter::from_path(&args.output_path)
+        .and_then(|writer| {
+            writer
+                .with_mesh_grouping(args.mesh_grouping())
+                .finish(scene)
+        })
+        .map_err(|source| Error::WriteOutput {
+            path: args.output_path.clone(),
+            source,
+        })?;
     info!("Wrote model in {:.3?}", now.elapsed());
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use crate::cli::{Cli, Commands};
+    use clap::Parser;
+    use std::path::Path;
+
+    fn run_with_paths(input: &Path, output: &Path) -> Result<(), Error> {
+        let cli = Cli::try_parse_from([
+            "ecitygml-converter-cli".as_ref(),
+            "convert-to-graphics".as_ref(),
+            "-i".as_ref(),
+            input.as_os_str(),
+            "-o".as_ref(),
+            output.as_os_str(),
+            "--translation-mode".as_ref(),
+            "none".as_ref(),
+        ])
+        .expect("valid arguments");
+        let Commands::ConvertToGraphics(args) = cli.command;
+        run(&args)
+    }
+
+    #[test]
+    fn read_error_names_the_input_path() {
+        let input = Path::new("missing-input-file.gml");
+        let error = run_with_paths(input, Path::new("city.egraphics")).unwrap_err();
+        assert!(matches!(error, Error::ReadInput { .. }));
+        assert!(error.to_string().contains("missing-input-file.gml"));
+    }
 }

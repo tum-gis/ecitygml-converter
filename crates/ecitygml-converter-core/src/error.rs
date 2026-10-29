@@ -6,9 +6,13 @@ pub enum Error {
     EcitygmlError(#[from] ecitygml::Error),
     #[error(transparent)]
     EgmlError(#[from] egml::Error),
-    #[cfg(feature = "voxel")]
-    #[error(transparent)]
-    EvoxelError(#[from] evoxel::Error),
+
     #[error(transparent)]
     EgraphicsError(#[from] egraphics::Error),
+    #[error("solid has no exterior shell")]
+    SolidMissingExterior,
+    #[error("exterior shell has no surface member")]
+    ShellMissingSurface,
+    #[error("geometry reference could not be resolved (unresolved or broken xlink)")]
+    UnresolvedGeometryReference,
 }

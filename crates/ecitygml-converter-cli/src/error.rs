@@ -1,31 +1,39 @@
+use std::path::PathBuf;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error(transparent)]
-    EcitygmlConverterError(#[from] ecitygml_converter::Error),
-    #[error(transparent)]
-    EcitygmlConverterIoError(#[from] ecitygml_converter::io::Error),
+    #[error("failed to read the CityGML dataset `{}`", path.display())]
+    ReadInput {
+        path: PathBuf,
+        #[source]
+        source: ecitygml::io::Error,
+    },
+    #[error("failed to write the output file `{}`", path.display())]
+    WriteOutput {
+        path: PathBuf,
+        #[source]
+        source: egraphics::io::Error,
+    },
 
     #[error(transparent)]
-    EcitygmlError(#[from] ecitygml::Error),
+    EcitygmlConverter(#[from] ecitygml_converter::Error),
     #[error(transparent)]
-    EcitygmlIoError(#[from] ecitygml::io::Error),
-    #[error(transparent)]
-    EcitygmlTransformError(#[from] ecitygml::transform::Error),
-    #[error(transparent)]
-    EgmlError(#[from] egml::Error),
-    #[error(transparent)]
-    EvoxelError(#[from] evoxel::Error),
-    #[error(transparent)]
-    EvoxelIoError(#[from] evoxel::io::Error),
-    #[error(transparent)]
-    EgraphicsError(#[from] egraphics::Error),
-    #[error(transparent)]
-    EgraphicsIoError(#[from] egraphics::io::Error),
-    #[error(transparent)]
-    ErosbagError(#[from] erosbag::Error),
+    EcitygmlConverterIo(#[from] ecitygml_converter::io::Error),
 
     #[error(transparent)]
-    StdIoError(#[from] std::io::Error),
+    Ecitygml(#[from] ecitygml::Error),
+    #[error(transparent)]
+    EcitygmlIo(#[from] ecitygml::io::Error),
+    #[error(transparent)]
+    EcitygmlTransform(#[from] ecitygml::transform::Error),
+    #[error(transparent)]
+    Egml(#[from] egml::Error),
+    #[error(transparent)]
+    Egraphics(#[from] egraphics::Error),
+    #[error(transparent)]
+    EgraphicsIo(#[from] egraphics::io::Error),
+
+    #[error(transparent)]
+    StdIo(#[from] std::io::Error),
 }

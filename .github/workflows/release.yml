@@ -1,0 +1,121 @@
+name: Release
+
+on:
+  push:
+    tags:
+    - '[0-9]+.[0-9]+.[0-9]+*'
+
+# Only the release job, which publishes the release, gets write access
+permissions:
+  contents: read
+
+env:
+  MISE_VERSION: 2026.10.4
+  # The tag is passed to the scripts as a variable, never interpolated into them
+  TAG: ${{ github.ref_name }}
+
+jobs:
+
+  check-version:
+    name: Check version
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - name: Verify tag matches Cargo.toml
+      shell: bash
+      run: |
+        if ! grep -q "^version = \"$TAG\"" Cargo.toml; then
+          echo "Tag $TAG does not match version in Cargo.toml" >&2
+          exit 1
+        fi
+
+  # Only tagged commits that pass the checks and tests are released
+  ci:
+    name: CI
+    needs: check-version
+    uses: ./.github/workflows/ci.yml
+
+  build:
+    needs: ci
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - target: x86_64-unknown-linux-gnu
+          os: ubuntu-latest
+        - target: aarch64-unknown-linux-gnu
+          os: ubuntu-24.04-arm
+        - target: x86_64-apple-darwin
+          os: macos-latest
+        - target: aarch64-apple-darwin
+          os: macos-latest
+        - target: x86_64-pc-windows-msvc
+          os: windows-latest
+
+    steps:
+    - uses: actions/checkout@v7
+
+    # The toolchain declared in mise.toml, as in CI; plus the release target
+    - uses: jdx/mise-action@v5
+      with:
+        version: ${{ env.MISE_VERSION }}
+    - run: rustup target add ${{ matrix.target }}
+
+    - name: Build
+      env:
+        CMAKE_TOOLCHAIN_FILE: ${{ runner.os == 'Windows' && 'C:\vcpkg\scripts\buildsystems\vcpkg.cmake' || '' }}
+        RUSTFLAGS: ${{ runner.os == 'Windows' && '-L C:\vcpkg\installed\x64-windows-static-md\lib' || '' }}
+      run: cargo build --profile release-lto --bin ecitygml-converter-cli --target ${{ matrix.target }}
+
+    - name: Package binary (Unix)
+      if: runner.os != 'Windows'
+      env:
+        TARGET: ${{ matrix.target }}
+      run: |
+        BINARY="target/$TARGET/release-lto/ecitygml-converter-cli"
+        ARCHIVE="ecitygml-converter-cli-$TAG-$TARGET.tar.gz"
+        tar -czf "$ARCHIVE" -C "$(dirname "$BINARY")" "$(basename "$BINARY")"
+        shasum -a 256 "$ARCHIVE" > "$ARCHIVE.sha256"
+        echo "ARCHIVE=$ARCHIVE" >> "$GITHUB_ENV"
+
+    - name: Package binary (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      env:
+        TARGET: ${{ matrix.target }}
+      run: |
+        $binary = "target\$env:TARGET\release-lto\ecitygml-converter-cli.exe"
+        $archive = "ecitygml-converter-cli-$env:TAG-$env:TARGET.zip"
+        Compress-Archive -Path $binary -DestinationPath $archive
+        certutil -hashfile $archive SHA256 > "$archive.sha256"
+        echo "ARCHIVE=$archive" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+    - uses: actions/upload-artifact@v7
+      with:
+        name: ecitygml-converter-${{ matrix.target }}
+        path: |
+          ${{ env.ARCHIVE }}
+          ${{ env.ARCHIVE }}.sha256
+        if-no-files-found: error
+
+  release:
+    name: Create release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/download-artifact@v8
+      with:
+        path: artifacts
+        pattern: ecitygml-converter-*
+        merge-multiple: true
+
+    # SemVer: every pre-release version (alpha, beta, rc, ...) contains a hyphen
+    - uses: softprops/action-gh-release@v3
+      with:
+        files: artifacts/*
+        generate_release_notes: true
+        prerelease: ${{ contains(github.ref_name, '-') }}

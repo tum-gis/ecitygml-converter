@@ -1,3 +1,4 @@
+use ecitygml::model::common::FeatureType;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -13,4 +14,6 @@ pub enum Error {
     NoFileExtension(),
     #[error("file extension `{0}` is invalid")]
     InvalidFileExtension(String),
+    #[error("`{0}` is not a city object class")]
+    NotACityObjectClass(FeatureType),
 }

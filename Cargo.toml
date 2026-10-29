@@ -6,35 +6,51 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.0.1-alpha.9"
+version = "0.0.2-alpha.1"
 authors = ["Benedikt Schwab <benedikt.schwab@gmail.com>"]
 edition = "2024"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/envis-space/ecitygml-converter"
 
-[workspace.dependencies]
-ecoord = { version = "0.0.1-alpha.9" }
-egml = { version = "0.0.1-alpha.9" }
-ecitygml = { version = "0.0.1-alpha.9" }
-egraphics = { version = "0.0.1-alpha.9" }
-erosbag = { version = "0.0.1-alpha.9" }
-evoxel = { version = "0.0.1-alpha.9" }
+[profile.release]
+# debug = 1
 
-thiserror = "2.0.17"
-anyhow = "1.0.100"
-clap = "4.5.50"
-serde = "1.0.228"
-serde_json = "1.0.145"
-quick-xml = "0.38.3"
-tracing = "0.1.41"
-tracing-subscriber = "0.3.20"
-polars = "0.51.0"
-itertools = "0.14.0"
-nalgebra = "0.34.1"
-parry3d-f64 = "0.25.1"
-meshopt = "0.6.2"
+[profile.release-lto]
+inherits = "release"
+opt-level = 3
+debug = "none"
+strip = "symbols"
+debug-assertions = false
+overflow-checks = false
+lto = "fat"
+panic = "abort"
+incremental = false
+codegen-units = 1
+
+[workspace.dependencies]
+ecoord = { version = "0.0.2-alpha.1" }
+egml = { version = "0.0.2-alpha.1" }
+ecitygml = { version = "0.0.2-alpha.1" }
+egraphics = { version = "0.0.2-alpha.1" }
+
+thiserror = "2.0.21"
+anyhow = "1.0.104"
+clap = "4.6.7"
+serde = "1.0.229"
+serde_json = "1.0.154"
+quick-xml = "0.42.0"
+tracing = "0.1.44"
+tracing-subscriber = "0.3.23"
+polars = "0.55.2"
+itertools = "0.15.0"
+nalgebra = "0.35.0"
+glam = "0.34.1"
+num-traits = "0.2.19"
+parry3d-f64 = "0.31.1"
+meshopt = "0.7.0"
 gltf = "1.4.1"
 gltf-json = "1.4.1"
-chrono = "0.4.42"
-rayon = "1.11.0"
-zstd = "0.13.3"
+chrono = "0.4.45"
+rayon = "1.12.0"
+zstd = "0.14.3"
+walkdir = "2.5.0"

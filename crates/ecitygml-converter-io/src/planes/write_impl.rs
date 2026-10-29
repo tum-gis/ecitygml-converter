@@ -1,25 +1,23 @@
 use crate::error::Error;
-use crate::planes::document::{
-    CityObjectClassElement, LevelOfDetailElement, PlanesDocument, PlanesElement,
-};
-use ecitygml::common::{CityObjectClass, LevelOfDetail};
-use ecitygml::operations::{CityObjectGeometryCollection, GeometryCollector};
+use crate::planes::document::{PlanesDocument, PlanesElement};
+use ecitygml::arena::CityModelArena;
+use ecitygml::model::common::{FeatureType, LevelOfDetail};
 use egml::model::base::Id;
-use egml::model::geometry::MultiSurface;
-use rayon::prelude::*;
-use std::io::{Cursor, Write};
+use egml::model::geometry::aggregates::MultiSurface;
+use std::io::Write;
 
 pub fn write_plane_document<W: Write>(
-    mut writer: W,
-    geometry_collector: GeometryCollector,
-    compression_level: Option<i32>,
+    _writer: W,
+    _city_object_arena: CityModelArena,
+    _compression_level: Option<i32>,
 ) -> Result<(), Error> {
-    let mut planes_document = PlanesDocument::default();
+    let _planes_document = PlanesDocument::default();
 
-    let planes: Vec<PlanesElement> = geometry_collector
-        .city_objects
+    /*let planes: Vec<PlanesElement> = city_object_arena
+        .features()
+        .values()
         .par_iter()
-        .flat_map(|x| extract_planes_from_city_object_geometry_collection(x.1))
+        .flat_map(extract_planes_from_city_object_geometry)
         .collect();
     planes_document.planes = planes;
 
@@ -36,47 +34,49 @@ pub fn write_plane_document<W: Write>(
     } else {
         serde_json::to_writer_pretty(&mut info_document_buffer, &planes_document)?;
         writer.write_all(&info_document_buffer)?;
-    }
+    }*/
 
     //let j = serde_json::to_string(&document)?;
     //serde_json::to_writer_pretty(&mut writer, &planes_document)?;
     Ok(())
 }
 
-fn extract_planes_from_city_object_geometry_collection(
-    city_object_geometry_collection: &CityObjectGeometryCollection,
+/*fn extract_planes_from_city_object_geometry(
+    city_object_geometry_entry: &CityObjectGeometryEntry,
 ) -> Vec<PlanesElement> {
-    city_object_geometry_collection
+    city_object_geometry_entry
         .multi_surfaces
         .iter()
         .flat_map(|x| {
             extract_planes_from_multi_surface(
                 x.1,
-                &city_object_geometry_collection.gml.id,
+                city_object_geometry_entry.id(),
                 *x.0,
-                city_object_geometry_collection.class,
+                city_object_geometry_entry.class,
             )
         })
         .collect()
-}
+}*/
 
+#[expect(dead_code, reason = "not used yet")]
 fn extract_planes_from_multi_surface(
-    multi_surface: &MultiSurface,
-    city_object_id: &Id,
-    level_of_detail: LevelOfDetail,
-    city_object_class: CityObjectClass,
+    _multi_surface: &MultiSurface,
+    _city_object_id: &Id,
+    _level_of_detail: LevelOfDetail,
+    _city_object_class: FeatureType,
 ) -> Vec<PlanesElement> {
-    multi_surface
-        .surface_member()
-        .iter()
-        .map(|x| {
-            let current_exterior_ring = &x.exterior;
-            let mut plane: PlanesElement = current_exterior_ring.try_into().unwrap();
-            plane.city_object_id = Some(city_object_id.clone().into());
-            plane.level_of_detail = Some(LevelOfDetailElement::from(level_of_detail));
-            plane.city_object_class = Some(CityObjectClassElement::from(city_object_class));
-            // let a = current_exterior_ring.normal();
-            plane
-        })
-        .collect()
+    todo!("improve");
+
+    /*multi_surface
+    .surface_member()
+    .iter()
+    .map(|x| {
+        let mut plane: PlanesElement = x.try_into().unwrap();
+        plane.city_object_id = Some(city_object_id.clone().into());
+        plane.level_of_detail = Some(LevelOfDetailElement::from(level_of_detail));
+        plane.city_object_class = CityObjectClassElement::try_from(city_object_class).ok();
+        // let a = current_exterior_ring.normal();
+        plane
+    })
+    .collect()*/
 }

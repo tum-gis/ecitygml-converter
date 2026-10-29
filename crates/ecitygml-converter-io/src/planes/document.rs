@@ -1,8 +1,8 @@
 use crate::error::Error;
-use ecitygml::common::{CityObjectClass, LevelOfDetail};
-use egml::model::geometry::{DirectPosition, LinearRing};
-use egml::operations::geometry::Geometry;
-use egml::operations::surface::Surface;
+use ecitygml::model::common::{FeatureType, LevelOfDetail};
+use egml::model::base::AsAbstractGml;
+use egml::model::geometry::DirectPosition;
+use egml::model::geometry::primitives::Polygon;
 use nalgebra::Vector3;
 use serde::{Deserialize, Serialize};
 
@@ -16,7 +16,7 @@ pub struct PlanesElement {
     pub id: String,
     pub city_object_id: Option<String>,
     pub level_of_detail: Option<LevelOfDetailElement>,
-    pub city_object_class: Option<CityObjectClassElement>,
+    pub city_object_class: Option<FeatureTypeElement>,
     pub point: VectorElement,
     pub normal: VectorElement,
     pub vertices: Vec<VectorElement>,
@@ -42,7 +42,8 @@ impl From<LevelOfDetail> for LevelOfDetailElement {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum CityObjectClassElement {
+pub enum FeatureTypeElement {
+    Appearance,
     AuxiliaryTrafficArea,
     AuxiliaryTrafficSpace,
     Bridge,
@@ -60,8 +61,10 @@ pub enum CityObjectClassElement {
     BuildingUnit,
     CeilingSurface,
     CityFurniture,
+    CityModel,
     CityObjectGroup,
     ClearanceSpace,
+    ClosureSurface,
     Door,
     DoorSurface,
     FloorSurface,
@@ -69,24 +72,30 @@ pub enum CityObjectClassElement {
     GenericOccupiedSpace,
     GenericThematicSurface,
     GenericUnoccupiedSpace,
+    GeoreferencedTexture,
     GroundSurface,
     Hole,
     HoleSurface,
     HollowSpace,
     InteriorWallSurface,
     Intersection,
+    LandUse,
     Marking,
     OtherConstruction,
     OuterCeilingSurface,
     OuterFloorSurface,
+    ParameterizedTexture,
     PlantCover,
+    PointCloud,
     Railway,
+    ReliefFeature,
     Road,
     RoofSurface,
     Section,
     SolitaryVegetationObject,
     Square,
-    Story,
+    Storey,
+    TinRelief,
     Track,
     TrafficArea,
     TrafficSpace,
@@ -102,82 +111,93 @@ pub enum CityObjectClassElement {
     Waterway,
     Window,
     WindowSurface,
+    X3DMaterial,
 }
 
-impl From<CityObjectClass> for CityObjectClassElement {
-    fn from(value: CityObjectClass) -> Self {
+impl TryFrom<FeatureType> for FeatureTypeElement {
+    type Error = Error;
+
+    fn try_from(value: FeatureType) -> Result<Self, Self::Error> {
         match value {
-            CityObjectClass::AuxiliaryTrafficArea => CityObjectClassElement::AuxiliaryTrafficArea,
-            CityObjectClass::AuxiliaryTrafficSpace => CityObjectClassElement::AuxiliaryTrafficSpace,
-            CityObjectClass::Bridge => CityObjectClassElement::Bridge,
-            CityObjectClass::BridgeConstructiveElement => {
-                CityObjectClassElement::BridgeConstructiveElement
+            FeatureType::AuxiliaryTrafficArea => Ok(FeatureTypeElement::AuxiliaryTrafficArea),
+            FeatureType::AuxiliaryTrafficSpace => Ok(FeatureTypeElement::AuxiliaryTrafficSpace),
+            FeatureType::Bridge => Ok(FeatureTypeElement::Bridge),
+            FeatureType::BridgeConstructiveElement => {
+                Ok(FeatureTypeElement::BridgeConstructiveElement)
             }
-            CityObjectClass::BridgeFurniture => CityObjectClassElement::BridgeFurniture,
-            CityObjectClass::BridgeInstallation => CityObjectClassElement::BridgeInstallation,
-            CityObjectClass::BridgePart => CityObjectClassElement::BridgePart,
-            CityObjectClass::BridgeRoom => CityObjectClassElement::BridgeRoom,
-            CityObjectClass::Building => CityObjectClassElement::Building,
-            CityObjectClass::BuildingConstructiveElement => {
-                CityObjectClassElement::BuildingConstructiveElement
+            FeatureType::BridgeFurniture => Ok(FeatureTypeElement::BridgeFurniture),
+            FeatureType::BridgeInstallation => Ok(FeatureTypeElement::BridgeInstallation),
+            FeatureType::BridgePart => Ok(FeatureTypeElement::BridgePart),
+            FeatureType::BridgeRoom => Ok(FeatureTypeElement::BridgeRoom),
+            FeatureType::Building => Ok(FeatureTypeElement::Building),
+            FeatureType::BuildingConstructiveElement => {
+                Ok(FeatureTypeElement::BuildingConstructiveElement)
             }
-            CityObjectClass::BuildingFurniture => CityObjectClassElement::BuildingFurniture,
-            CityObjectClass::BuildingInstallation => CityObjectClassElement::BuildingInstallation,
-            CityObjectClass::BuildingPart => CityObjectClassElement::BuildingPart,
-            CityObjectClass::BuildingRoom => CityObjectClassElement::BuildingRoom,
-            CityObjectClass::BuildingUnit => CityObjectClassElement::BuildingUnit,
-            CityObjectClass::CeilingSurface => CityObjectClassElement::CeilingSurface,
-            CityObjectClass::CityFurniture => CityObjectClassElement::CityFurniture,
-            CityObjectClass::CityObjectGroup => CityObjectClassElement::CityObjectGroup,
-            CityObjectClass::ClearanceSpace => CityObjectClassElement::ClearanceSpace,
-            CityObjectClass::Door => CityObjectClassElement::Door,
-            CityObjectClass::DoorSurface => CityObjectClassElement::DoorSurface,
-            CityObjectClass::FloorSurface => CityObjectClassElement::FloorSurface,
-            CityObjectClass::GenericLogicalSpace => CityObjectClassElement::GenericLogicalSpace,
-            CityObjectClass::GenericOccupiedSpace => CityObjectClassElement::GenericOccupiedSpace,
-            CityObjectClass::GenericThematicSurface => {
-                CityObjectClassElement::GenericThematicSurface
+            FeatureType::BuildingFurniture => Ok(FeatureTypeElement::BuildingFurniture),
+            FeatureType::BuildingInstallation => Ok(FeatureTypeElement::BuildingInstallation),
+            FeatureType::BuildingPart => Ok(FeatureTypeElement::BuildingPart),
+            FeatureType::BuildingRoom => Ok(FeatureTypeElement::BuildingRoom),
+            FeatureType::BuildingUnit => Ok(FeatureTypeElement::BuildingUnit),
+            FeatureType::CeilingSurface => Ok(FeatureTypeElement::CeilingSurface),
+            FeatureType::CityFurniture => Ok(FeatureTypeElement::CityFurniture),
+            FeatureType::CityObjectGroup => Ok(FeatureTypeElement::CityObjectGroup),
+            FeatureType::ClearanceSpace => Ok(FeatureTypeElement::ClearanceSpace),
+            FeatureType::Door => Ok(FeatureTypeElement::Door),
+            FeatureType::DoorSurface => Ok(FeatureTypeElement::DoorSurface),
+            FeatureType::FloorSurface => Ok(FeatureTypeElement::FloorSurface),
+            FeatureType::GenericLogicalSpace => Ok(FeatureTypeElement::GenericLogicalSpace),
+            FeatureType::GenericOccupiedSpace => Ok(FeatureTypeElement::GenericOccupiedSpace),
+            FeatureType::GenericThematicSurface => Ok(FeatureTypeElement::GenericThematicSurface),
+            FeatureType::GenericUnoccupiedSpace => Ok(FeatureTypeElement::GenericUnoccupiedSpace),
+            FeatureType::GroundSurface => Ok(FeatureTypeElement::GroundSurface),
+            FeatureType::Hole => Ok(FeatureTypeElement::Hole),
+            FeatureType::HoleSurface => Ok(FeatureTypeElement::HoleSurface),
+            FeatureType::HollowSpace => Ok(FeatureTypeElement::HollowSpace),
+            FeatureType::InteriorWallSurface => Ok(FeatureTypeElement::InteriorWallSurface),
+            FeatureType::Intersection => Ok(FeatureTypeElement::Intersection),
+            FeatureType::LandUse => Ok(FeatureTypeElement::LandUse),
+            FeatureType::Marking => Ok(FeatureTypeElement::Marking),
+            FeatureType::OtherConstruction => Ok(FeatureTypeElement::OtherConstruction),
+            FeatureType::OuterCeilingSurface => Ok(FeatureTypeElement::OuterCeilingSurface),
+            FeatureType::OuterFloorSurface => Ok(FeatureTypeElement::OuterFloorSurface),
+            FeatureType::PlantCover => Ok(FeatureTypeElement::PlantCover),
+            FeatureType::Railway => Ok(FeatureTypeElement::Railway),
+            FeatureType::ReliefFeature => Ok(FeatureTypeElement::ReliefFeature),
+            FeatureType::Road => Ok(FeatureTypeElement::Road),
+            FeatureType::RoofSurface => Ok(FeatureTypeElement::RoofSurface),
+            FeatureType::Section => Ok(FeatureTypeElement::Section),
+            FeatureType::SolitaryVegetationObject => {
+                Ok(FeatureTypeElement::SolitaryVegetationObject)
             }
-            CityObjectClass::GenericUnoccupiedSpace => {
-                CityObjectClassElement::GenericUnoccupiedSpace
+            FeatureType::Square => Ok(FeatureTypeElement::Square),
+            FeatureType::Storey => Ok(FeatureTypeElement::Storey),
+            FeatureType::TinRelief => Ok(FeatureTypeElement::TinRelief),
+            FeatureType::Track => Ok(FeatureTypeElement::Track),
+            FeatureType::TrafficArea => Ok(FeatureTypeElement::TrafficArea),
+            FeatureType::TrafficSpace => Ok(FeatureTypeElement::TrafficSpace),
+            FeatureType::Tunnel => Ok(FeatureTypeElement::Tunnel),
+            FeatureType::TunnelConstructiveElement => {
+                Ok(FeatureTypeElement::TunnelConstructiveElement)
             }
-            CityObjectClass::GroundSurface => CityObjectClassElement::GroundSurface,
-            CityObjectClass::Hole => CityObjectClassElement::Hole,
-            CityObjectClass::HoleSurface => CityObjectClassElement::HoleSurface,
-            CityObjectClass::HollowSpace => CityObjectClassElement::HollowSpace,
-            CityObjectClass::InteriorWallSurface => CityObjectClassElement::InteriorWallSurface,
-            CityObjectClass::Intersection => CityObjectClassElement::Intersection,
-            CityObjectClass::Marking => CityObjectClassElement::Marking,
-            CityObjectClass::OtherConstruction => CityObjectClassElement::OtherConstruction,
-            CityObjectClass::OuterCeilingSurface => CityObjectClassElement::OuterCeilingSurface,
-            CityObjectClass::OuterFloorSurface => CityObjectClassElement::OuterFloorSurface,
-            CityObjectClass::PlantCover => CityObjectClassElement::PlantCover,
-            CityObjectClass::Railway => CityObjectClassElement::Railway,
-            CityObjectClass::Road => CityObjectClassElement::Road,
-            CityObjectClass::RoofSurface => CityObjectClassElement::RoofSurface,
-            CityObjectClass::Section => CityObjectClassElement::Section,
-            CityObjectClass::SolitaryVegetationObject => {
-                CityObjectClassElement::SolitaryVegetationObject
-            }
-            CityObjectClass::Square => CityObjectClassElement::Square,
-            CityObjectClass::Story => CityObjectClassElement::Story,
-            CityObjectClass::Track => CityObjectClassElement::Track,
-            CityObjectClass::TrafficArea => CityObjectClassElement::TrafficArea,
-            CityObjectClass::TrafficSpace => CityObjectClassElement::TrafficSpace,
-            CityObjectClass::Tunnel => CityObjectClassElement::Tunnel,
-            CityObjectClass::TunnelConstructiveElement => {
-                CityObjectClassElement::TunnelConstructiveElement
-            }
-            CityObjectClass::TunnelFurniture => CityObjectClassElement::TunnelFurniture,
-            CityObjectClass::TunnelInstallation => CityObjectClassElement::TunnelInstallation,
-            CityObjectClass::TunnelPart => CityObjectClassElement::TunnelPart,
-            CityObjectClass::WallSurface => CityObjectClassElement::WallSurface,
-            CityObjectClass::WaterBody => CityObjectClassElement::WaterBody,
-            CityObjectClass::WaterGroundSurface => CityObjectClassElement::WaterGroundSurface,
-            CityObjectClass::WaterSurface => CityObjectClassElement::WaterSurface,
-            CityObjectClass::Waterway => CityObjectClassElement::Waterway,
-            CityObjectClass::Window => CityObjectClassElement::Window,
-            CityObjectClass::WindowSurface => CityObjectClassElement::WaterSurface,
+            FeatureType::TunnelFurniture => Ok(FeatureTypeElement::TunnelFurniture),
+            FeatureType::TunnelInstallation => Ok(FeatureTypeElement::TunnelInstallation),
+            FeatureType::TunnelPart => Ok(FeatureTypeElement::TunnelPart),
+            FeatureType::WallSurface => Ok(FeatureTypeElement::WallSurface),
+            FeatureType::WaterBody => Ok(FeatureTypeElement::WaterBody),
+            FeatureType::WaterGroundSurface => Ok(FeatureTypeElement::WaterGroundSurface),
+            FeatureType::WaterSurface => Ok(FeatureTypeElement::WaterSurface),
+            FeatureType::Waterway => Ok(FeatureTypeElement::Waterway),
+            FeatureType::Window => Ok(FeatureTypeElement::Window),
+            FeatureType::WindowSurface => Ok(FeatureTypeElement::WindowSurface),
+            FeatureType::ClosureSurface => Ok(FeatureTypeElement::ClosureSurface),
+            FeatureType::Appearance => Ok(FeatureTypeElement::Appearance),
+
+            FeatureType::GeoreferencedTexture => Ok(FeatureTypeElement::GeoreferencedTexture),
+            FeatureType::CityModel => Ok(FeatureTypeElement::CityModel),
+
+            FeatureType::ParameterizedTexture => Ok(FeatureTypeElement::ParameterizedTexture),
+            FeatureType::X3DMaterial => Ok(FeatureTypeElement::X3DMaterial),
+            FeatureType::PointCloud => Ok(FeatureTypeElement::PointCloud),
         }
     }
 }
@@ -189,14 +209,14 @@ pub struct VectorElement {
     pub z: f64,
 }
 
-impl TryFrom<&LinearRing> for PlanesElement {
+impl TryFrom<&Polygon> for PlanesElement {
     type Error = Error;
 
-    fn try_from(value: &LinearRing) -> Result<Self, Self::Error> {
+    fn try_from(value: &Polygon) -> Result<Self, Self::Error> {
         let plane = value.plane_equation();
 
         let plane = Self {
-            id: value.gml.id.to_string(),
+            id: value.id().map(|x| x.to_string()).unwrap_or_default(),
             city_object_id: None,
             level_of_detail: None,
             city_object_class: None,
